@@ -1,0 +1,58 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: tls-gateway-certificate
+  namespace: istio-system
+spec:
+  secretName: tls-gateway-certificate
+  issuerRef:
+    name: acme-clusterissuer
+    kind: ClusterIssuer
+  commonName: "sasa"
+  dnsNames:
+    - "sasa"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: tls-gateway-gateway
+  namespace: istio-system
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - hosts:
+        - "*/sasa"
+      port:
+        name: https
+        number: 443
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: tls-gateway-certificate
+        minProtocolVersion: TLSV1_2
+    - hosts:
+        - "*/sasa"
+      port:
+        name: http
+        number: 80
+        protocol: HTTP
+      tls:
+        httpsRedirect: true
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: tls-gateway-ingress
+  namespace: istio-system
+spec:
+  selector:
+    matchLabels:
+      app: istio-ingressgateway
+  action: ALLOW
+  rules:
+    - to:
+        - operation:
+            hosts:
+              - "sasa"

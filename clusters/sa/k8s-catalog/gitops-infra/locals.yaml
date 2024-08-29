@@ -1,0 +1,18 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: locals
+  namespace: flux-system
+spec:
+  # Add dependencies for local configurations
+  # dependsOn:
+  #   - name: akv2k8s
+  #   - name: istio
+  interval: 10m0s
+  path: ./clusters/sa/locals
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  timeout: 2m0s

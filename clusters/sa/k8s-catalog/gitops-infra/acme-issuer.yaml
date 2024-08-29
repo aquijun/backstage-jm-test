@@ -1,0 +1,53 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: acme-clusterissuer-secrets
+  namespace: cert-manager
+spec:
+  dependsOn:
+    - name: akv2k8s
+      namespace: flux-system
+  interval: 10m0s
+  path: ./templates/cert-manager/acme-issuer/secrets/with-akv2k8s
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: gitops-infra
+    namespace: flux-system
+  timeout: 2m0s
+  targetNamespace: cert-manager
+  postBuild:
+    substitute:
+      vaultName: dsa
+      keyIdSecretName: acme-key-id
+      hmacKeySecretName: acme-hmac-key
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: acme-clusterissuer
+  namespace: cert-manager
+spec:
+  dependsOn:
+    - name: acme-clusterissuer-secrets
+    - name: cert-manager
+      namespace: flux-system
+  interval: 10m0s
+  path: ./templates/cert-manager/acme-issuer/cluster-issuer
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: gitops-infra
+    namespace: flux-system
+  timeout: 2m0s
+  targetNamespace: cert-manager
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: acme-key-id # This field must be the same as 'keyIdSecretName' in the secrets kustomization (only applies if overriding the default value)
+    substitute:
+      # This email is used to contact you about expiring certificates, and
+      # issues related to your account.
+      email: test@gf.com
+      hmacKeySecretName: acme-hmac-key
